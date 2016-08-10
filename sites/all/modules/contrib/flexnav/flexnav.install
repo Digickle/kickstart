@@ -1,0 +1,60 @@
+<?php
+/**
+ * @file
+ * Requirements, install, update, and uninstall functions for the FlexNav module.
+ */
+ 
+/**
+ * Implements hook_uninstall().
+ */
+function flexnav_uninstall() {
+  variable_del('flexnav_block_count');
+
+  // Common settings.
+  $settings = array(
+    'flexnav_menu_',
+    'flexnav_breakpoint_',
+    'flexnav_animation_speed_',
+    'flexnav_transition_opacity_',
+    'flexnav_button_selector_',
+    'flexnav_calc_item_widths_',
+    'flexnav_single_page_',
+  );
+  foreach ($settings as $setting) {
+    $results = db_query('SELECT name FROM {variable} WHERE name LIKE :name', array(':name' => db_like($setting) . '%'))->fetchAll();
+
+    foreach ($results as $row) {
+      variable_del($row->name);
+    }
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function flexnav_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $library = libraries_detect('flexnav');
+
+    if (empty($library['installed'])) {
+      $requirements['flexnav_plugin'] = array(
+        'title' => $t('Flexnav plugin'),
+        'severity' => REQUIREMENT_ERROR,
+        'value' => t('Missing library'),
+        'description' => $t('You need to download the !plugin, extract the archive, place the decompressed files in the %path directory on your server, and rename the flexnav-master directory to simply flexnav.', array('!plugin' => l($t('Flexnav jQuery plugin'), $library['download url']), '%path' => 'sites/all/libraries')),
+      );
+    }
+    else {
+      $requirements['flexnav_plugin'] = array(
+        'title' => $t('Flexnav plugin'),
+        'severity' => REQUIREMENT_OK,
+        'value' => $library['version'],
+      );
+    }
+  }
+
+  return $requirements;
+}

@@ -1,0 +1,7 @@
+name        = One UX Tweaks
+description = "Miscellaneous UX improvements to the CMS"
+package     = "One"
+core        = 7.x
+version     = 7.x-1.1
+
+files[]     = one_tweaks.module

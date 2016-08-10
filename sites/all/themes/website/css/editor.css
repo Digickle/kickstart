@@ -1,0 +1,13 @@
+* {
+  font-family: arial, helvetica, sans-serif;
+}
+
+body {
+  max-width: 800px;
+}
+
+img.img-align-left {
+  float: left;
+  margin-right: 15px;
+  margin-bottom: 15px;
+}

@@ -1,0 +1,146 @@
+<?php
+
+function one_tweaks_init() {
+
+//  global $user;
+//  drupal_add_js(array('uid' => $user->uid), 'setting');
+
+  drupal_add_css(drupal_get_path('module', 'one_tweaks') . '/css/hideShowPassword.css', array('every_page' => TRUE));
+  drupal_add_js(drupal_get_path('module', 'one_tweaks') . '/js/hideShowPassword.min.js', array('every_page' => TRUE));
+  drupal_add_js(drupal_get_path('module', 'one_tweaks') . '/js/email.min.js', array('every_page' => TRUE));
+  drupal_add_js(drupal_get_path('module', 'one_tweaks') . '/js/oneTweaks.js', array('every_page' => TRUE));
+}
+
+
+function one_tweaks_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
+  if ($form && isset($form['#entity_type']) && $form['#entity_type'] == 'user') {
+    $form['metatags']['#access'] = FALSE;
+  }
+
+  if ($form && isset($form['#node_edit_form'])) {
+
+    if (isset($form['author'])) {
+      $form['author']['name']['#title'] = t('Content Author');
+      $form['author']['date']['#title'] = t('Post Date');
+    }
+
+    $form['menu']['enabled']['#title'] = t('Include this page in the website menus');
+    $form['menu']['enabled']['#description'] = t('Tick this box to automatically add this page to the menu structure.');
+
+    // Better help for the XML sitemap
+    if (isset($form['xmlsitemap'])) {
+      $form['xmlsitemap']['#title'] = t('Google Site Map');
+      $form['xmlsitemap']['description']['#markup'] = t('Select whether or not to include this page in the site map that is submitted to Google and Bing.');
+      $form['xmlsitemap']['priority']['#access'] = FALSE;
+      $form['xmlsitemap']['priority']['#description'] = t('The higher this value, the more importance is placed on this page. Leave as 0.5 if you are not sure.');
+    }
+
+    // Better help for the URL path
+    if (isset($form['path'])) {
+      $form['path']['#title'] = 'Web Address';
+      $form['path']['alias']['#description'] = 'Enter the web address (URL) to access this page within your site. Do <strong>not</strong> add an extra \'/\' to the end.';
+      $form['path']['alias']['#title'] = t('Web Address');
+      $form['path']['pathauto']['#title'] = t('Automatically create the web address (recommended)');
+      $form['path']['pathauto']['#description'] = t('The CMS will create the web address based on the title of the content and where it sits within the site.<br>Un-tick this box to set your own web address for this page.<br><br><strong>Note: Changing the content\'s title may alter the automatic URL and break any links to this page</strong>');
+    }
+
+    // Better help for META tags
+    if (isset($form['metatags'])) {
+      $form['metatags']['#title'] = 'SEO';
+      $form['metatags']['und']['abstract']['#access'] = FALSE;
+      $form['metatags']['und']['open-graph']['#access'] = FALSE;
+      $form['metatags']['und']['advanced']['#access'] = FALSE;
+    }
+
+    if (isset($form['revision_information'])) {
+      $form['revision_information']['revision']['#title'] = t('Save this as a new version');
+      $form['revision_information']['revision']['#description'] = t('Tick this box to save this content as a new version and preserve older copies in case any changes need to be reversed.');
+      $form['revision_information']['log']['#description'] = t('Use this to make a note of any changes you\'ve made to help other editors understand what has been altered.');
+      $form['revision_information']['#title'] = t('Content Revisions');
+    }
+
+    $form['options']['status']['#suffix'] = '<div class="description"><small>' . t('Un-tick this box to hide this content to visitors (draft). Ticking this box publishes the content to the site immediately.') . '</small></div>';
+
+    unset($form['options']['promote']);
+    $form['options']['sticky']['#prefix'] = '<br>';
+    $form['options']['sticky']['#title'] = t('Pinned content');
+    $form['options']['sticky']['#suffix'] = '<div class="description"><small>' . t('If allowed, this will push this content to the top of lists.') . '</small></div>';
+  }
+
+  if ('taxonomy_form_term' == $form_id) {
+    // Move odd fields in to the main flow of the edit page..
+    drupal_add_js("window.onload = function(){
+      if(jQuery('.form-item-taxonomy-title').length > 0){
+        jQuery('.form-item-taxonomy-title').insertAfter('.form-item-name');
+      }
+      if(jQuery('#edit-relations').length > 0 && jQuery('.vertical-tabs-pane:last-child>.fieldset-wrapper').length > 0){
+        jQuery('#edit-relations').appendTo('.vertical-tabs-pane:last-child>.fieldset-wrapper');
+      }
+    }", 'inline');
+
+  }
+
+  if ($form_id == 'system_cron_settings') {
+    $form['cron_key_reset']['cron_key'] = array(
+      '#type'   => 'submit',
+      '#value'  => t('Reset cron key'),
+      '#submit' => array('cron_key_reset'),
+    );
+  }
+
+  if ($form_id == 'user_login') {
+    drupal_set_title(t('Log in'));
+    unset($form['name']["#description"]);
+    $form['pass']["#description"] = '<a  href="' . base_path() . 'account/password">' . t('Forgotten your password?') . '</a>';
+    $form['name']['#title'] = t('Email address');
+    $form['name']['#attributes'] = array('placeholder' => t('Your registered email address'));
+    $form['pass']['#attributes'] = array('placeholder' => t('********'));
+  }
+
+  if ($form_id == 'user_pass') {
+    drupal_set_title(t('Forgotten your login details?'));
+    $form['#prefix'] = '<p>' . t('Enter your registered email address below and we will send you instructions on how to change your password.') . '</p>';
+    $form['name']['#title'] = t('Email address');
+    $form['name']['#attributes'] = array('placeholder' => t('Your email address'));
+    $form['actions']['submit']['#value'] = t('Email reset instructions');
+  }
+
+}
+
+function one_tweaks_user_login(&$edit, $account) {
+  // Do not redirect when the user is resetting their password.
+  if (!isset($_POST['form_id']) || $_POST['form_id'] != 'user_pass_reset') {
+    //if (in_array('Content Administrator', $account->roles)) {
+    drupal_goto('admin/content');
+    //}
+  }
+}
+
+function one_tweaks_menu_alter(&$items) {
+  // Remove access to add standard blocks page. Bleurgh.
+  $items ['admin/structure/block/add']['access callback'] = FALSE;
+  $items ['admin/structure/block/list/shiny/add']['access callback'] = FALSE;
+  // Don't be install stuff through the CMS, either!
+  $items ['admin/modules/install']['access callback'] = FALSE;
+}
+
+function one_tweaks_cron() {
+  @unlink(getcwd() . '/robots.txt');
+  @unlink(getcwd() . '/CHANGELOG.txt');
+  @unlink(getcwd() . '/INSTALL.mysql.txt');
+  @unlink(getcwd() . '/INSTALL.pgsql.txt');
+  @unlink(getcwd() . '/INSTALL.sqlite.txt');
+  @unlink(getcwd() . '/INSTALL.txt');
+  @unlink(getcwd() . '/UPGRADE.txt');
+  @unlink(getcwd() . '/MAINTAINERS.txt');
+  @unlink(getcwd() . '/LICENSE.txt');
+}
+
+function cron_key_reset() {
+  // Reset the system cron key variable.
+  $cron_key = drupal_random_key();
+  variable_set('cron_key', $cron_key);
+  drupal_set_message('New cron key generated. Please update any cron jobs with the new key.', 'status');
+}

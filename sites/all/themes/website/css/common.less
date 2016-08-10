@@ -1,0 +1,71 @@
+@colour: #FF0000;
+
+.seethru(@amnt) {
+  opacity: @amnt;-moz-opacity: @amnt;-webkit-opacity: @amnt;
+}
+
+.curvy(@amnt){
+  border-radius: @amnt;-moz-border-radius: @amnt;-webkit-border-radius: @amnt;
+}
+
+.thin(){
+  font-weight: 100;
+}
+
+.light(){
+  font-weight: 300;
+}
+
+.normal() {
+  font-weight: 400;
+}
+
+.semi(){
+  font-weight: 600;
+}
+
+.bold(){
+  font-weight: 700;
+}
+
+.extra(){
+  font-weight: 800;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: rgba(70, 215, 198,0.4);
+}
+
+*:focus {
+    outline: none;
+}
+
+
+body {cursor: default;}
+
+textarea,input[type="text"],input[type="email"],input[type="button"],input[type="submit"] {
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+a, button,input[type="submit"] {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+input.text-box[name*="postcode"] {
+  text-transform: uppercase;
+}
+
+a[href^=tel]{
+  color:inherit!important;
+  text-decoration:none!important;
+  border-bottom: inherit!important;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}

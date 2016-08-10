@@ -1,0 +1,381 @@
+<?php
+/**
+ * @file
+ * Integration with the FlexNav jQuery plugin for responsive menus.
+ */
+ 
+/**
+ * Implements hook_menu().
+ */
+function flexnav_menu() {
+  $items['admin/config/user-interface/flexnav'] = array(
+    'title' => 'Flexnav',
+    'description' => 'Flexnav admin settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('flexnav_settings_form'),
+    'access arguments' => array('administer flexnav settings'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'flexnav.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function flexnav_permission() {
+  return array(
+    'administer flexnav settings' => array(
+      'title' => t('Administer Flexnav settings'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function flexnav_block_info() {
+  // Generate no. of blocks.
+  foreach (range(1, variable_get('flexnav_block_count', 1)) as $delta) {
+    $blocks['flexnav_' . $delta] = array(
+      'info' => t('Responsive Menu (FlexNav ' . $delta . ')'),
+      'cache' => DRUPAL_CACHE_PER_ROLE,
+    );
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function flexnav_block_configure($delta) {
+  $form['flexnav'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Flexnav Settings'),
+  );
+  $form['flexnav']['flexnav_menu_' . $delta] = array(
+    '#type' => 'select',
+    '#title' => t('Menu'),
+    '#options' => menu_get_menus(),
+    '#description' => t('The desired menu to render as a Flexnav.'),
+    '#default_value' => variable_get('flexnav_menu_' . $delta, 'main-menu:0'),
+  );
+  $form['flexnav']['flexnav_breakpoint_' . $delta] = array(
+    '#type' => 'textfield',
+    '#title' => t('Breakpoint'),
+    '#description' => t('The desired breakpoint (in px) to turn your menu mobile friendly.'),
+    '#default_value' => variable_get('flexnav_breakpoint_' . $delta, 800),
+  );
+  $form['flexnav']['flexnav_hover_' . $delta] = array(
+    '#type' => 'select',
+    '#title' => t('Show the sub-menu on hover'),
+    '#options' => array(
+      0 => t('No'),
+      1 => t('Yes'),
+    ),
+    '#description' => t('When set to <em>No</em> sub-menus will only show on click.'),
+    '#default_value' => variable_get('flexnav_hover_' . $delta, 1),
+  );
+  $form['flexnav']['flexnav_calc_item_widths_' . $delta] = array(
+    '#type' => 'select',
+    '#title' => t('Automatic item width'),
+    '#options' => array(
+      0 => t('False'),
+      1 => t('True'),
+    ),
+    '#description' => t('Dynamically calculate the width of top level navigation items.'),
+    '#default_value' => variable_get('flexnav_calc_item_widths_' . $delta, 0),
+  );
+
+  $form['flexnav']['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['flexnav']['advanced']['flexnav_button_selector_' . $delta] = array(
+    '#type' => 'textfield',
+    '#title' => t('Button Selector'),
+    '#description' => t('Default menu button class name.'),
+    '#default_value' => variable_get('flexnav_button_selector_' . $delta, '.menu-button'),
+  );
+  $form['flexnav']['advanced']['flexnav_animation_speed_' . $delta] = array(
+    '#type' => 'textfield',
+    '#title' => t('Animation Speed'),
+    '#description' => t('Default for drop down animation speed.'),
+    '#default_value' => variable_get('flexnav_animation_speed_' . $delta, 250),
+  );
+  $form['flexnav']['advanced']['flexnav_transition_opacity_' . $delta] = array(
+    '#type' => 'select',
+    '#title' => t('Transition Opacity'),
+    '#options' => array(
+      0 => t('False'),
+      1 => t('True'),
+    ),
+    '#description' => t('Default for opacity animation.'),
+    '#default_value' => variable_get('flexnav_transition_opacity_' . $delta, 1),
+  );
+  $form['flexnav']['advanced']['flexnav_single_page_' . $delta] = array(
+    '#type' => 'select',
+    '#title' => t('Single Page'),
+    '#options' => array(
+      0 => t('False'),
+      1 => t('True'),
+    ),
+    '#description' => t('For single page websites using id & anchor links.'),
+    '#default_value' => variable_get('flexnav_single_page_' . $delta, 0),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function flexnav_block_save($delta, $edit) {
+  // Save menu instance settings.
+  variable_set('flexnav_menu_' . $delta, $edit['flexnav_menu_' . $delta]);
+  variable_set('flexnav_single_page_' . $delta, $edit['flexnav_single_page_' . $delta]);
+  variable_set('flexnav_breakpoint_' . $delta, $edit['flexnav_breakpoint_' . $delta]);
+
+  // JavaScript settings.
+  variable_set('flexnav_animation_speed_' . $delta, $edit['flexnav_animation_speed_' . $delta]);
+  variable_set('flexnav_transition_opacity_' . $delta, $edit['flexnav_transition_opacity_' . $delta]);
+  variable_set('flexnav_button_selector_' . $delta, $edit['flexnav_button_selector_' . $delta]);
+  variable_set('flexnav_calc_item_widths_' . $delta, $edit['flexnav_calc_item_widths_' . $delta]);
+  variable_set('flexnav_hover_' . $delta, $edit['flexnav_hover_' . $delta]);
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function flexnav_block_view($delta = '') {
+  $block = array();
+
+  // Load the menu and all it's data.
+  $flexnav = explode(':', variable_get('flexnav_menu_' . $delta, 'main-menu:0'));
+  $menu = menu_tree_all_data($flexnav[0]);
+
+  // Additional menu attributes.
+  $breakpoint = variable_get('flexnav_breakpoint_' . $delta, 800);
+  $single_page = variable_get('flexnav_single_page_' . $delta, 0);
+
+  // Allow i18n module to translate strings where available.
+  if (module_exists('i18n_menu')) {
+    $menu = i18n_menu_localize_tree($menu);
+  }
+
+  // Return a renderable array.
+  $block['content'] = array(
+    '#theme' => 'flexnav_menu',
+    '#tree' => $menu,
+    '#attributes' => array(
+      'id' => $delta,
+      'class' => array(
+        'flexnav', ($single_page) ? 'one-page' : '',
+      ),
+      'breakpoint' => $breakpoint,
+    ),
+    '#attached' => array(
+      'js' => array(
+        array(
+          'data' => array('flexnav' => array($delta => _flexnav_load_javascript_settings($delta))),
+          'type' => 'setting'
+        ),
+        drupal_get_path('module', 'flexnav') . '/js/flexnav.settings.js',
+      ),
+    ),
+  );
+
+  return $block;
+}
+
+/**
+ * Helper function, load settings per menu instance & correct type cast.
+ */
+function _flexnav_load_javascript_settings($instance) {
+  // Drupal specific settings.
+  $settings = array(
+    'activeTrail' => (boolean)variable_get('flexnav_active_trail', TRUE),
+  );
+
+  // Flexnav library options.
+  $options = array(
+    'animationSpeed' => (int)variable_get('flexnav_animation_speed_' . $instance, 250),
+    'transitionOpacity' => (boolean)variable_get('flexnav_transition_opacity_' . $instance, 1),
+    'buttonSelector' => (string)variable_get('flexnav_button_selector_' . $instance, '.menu-button'),
+    'hoverIntent' => true,
+    'hoverIntentTimeout' => (int)variable_get('flexnav_hover_intent_timeout_' . $instance, 150),
+    'calcItemWidths' => (boolean)variable_get('flexnav_calc_item_widths_' . $instance, 0),
+    'hover' => (boolean)variable_get('flexnav_hover_' . $instance, 1),
+  );
+
+  return array(
+    'options' => $options,
+    'settings' => $settings
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function flexnav_theme($existing, $type, $theme, $path) {
+  return array(
+    'flexnav_menu' => array(
+      'variables' => array(
+        'tree' => array(),
+        'attributes' => array(),
+      ),
+    ),
+    'flexnav_menu_tree' => array(
+      'variables' => array(
+        'tree' => array(),
+        'attributes' => array(),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements theme_flexnav_menu_tree().
+ */
+function theme_flexnav_menu_tree($variables) {
+  if (!empty($variables['attributes'])) {
+    $id = $variables['attributes']['id'];
+    $class = $variables['attributes']['class'];
+    $breakpoint = $variables['attributes']['breakpoint'];
+
+    // Parent list wrapper.
+    $output  = '<div class="menu-button">Menu</div>';
+    $output .= '<ul id="' . $id . '" class="' . $class . '" data-breakpoint="' . $breakpoint . '">' . drupal_render($variables['tree']) . '</ul>';
+  }
+  else {
+    $output = '<ul class="menu">' . drupal_render($variables['tree']) . '</ul>';
+  }
+
+  return $output;
+}
+
+/**
+ * Theme function definition.
+ */
+function theme_flexnav_menu($variables = array()) {
+  // We need to do this first, so that the info hook is called.
+  $library = libraries_detect('flexnav');
+
+  // Then we can add the library.
+  libraries_load('flexnav');
+
+  // Build the menu.
+  $tree = $variables['tree'];
+
+  // Menu attributes.
+  $attributes = array (
+    'id' => $variables['attributes']['id'],
+    'class' => $class = implode(' ', array_filter($variables['attributes']['class'])),
+    'breakpoint' => $variables['attributes']['breakpoint'],
+  );
+
+  // Recursively build menu outpout.
+  $output = flexnav_menu_tree_output($tree, $attributes);
+
+  return drupal_render($output);
+}
+
+/**
+ * Render menu tree ouput with
+ * additional formatting.
+ */
+function flexnav_menu_tree_output($tree, $attributes = NULL) {
+  $items = array();
+  foreach ($tree as $data) {
+    if ($data['link']['access'] && !$data['link']['hidden']) {
+      $items[] = $data;
+    }
+  }
+
+  $build = array();
+  $num_items = count($items);
+  foreach ($items as $i => $item) {
+    $class = array();
+
+    if ($i == 0) {
+      $class[] = 'first';
+    }
+    if ($i == $num_items - 1) {
+      $class[] = 'last';
+    }
+
+    // Build link.
+    $element['#theme'] = 'menu_link__' . strtr($item['link']['menu_name'], '-', '_');
+    $element['#attributes']['class'] = $class;
+    $element['#title'] = $item['link']['title'];
+    $element['#href'] = $item['link']['href'];
+    $element['#localized_options'] = !empty($item['link']['localized_options']) ? $item['link']['localized_options'] : array();
+    $element['#original_link'] = $item['link'];
+
+    // Recursively build menu output.
+    if ($item['below']) {
+      $element['#below'] = flexnav_menu_tree_output($item['below']);
+    } else {
+      $element['#below'] = array();
+    }
+   
+    // Return expected menu array.
+    $build[$item['link']['mlid']] = $element;
+  }
+
+  if ($build) {
+    // Implement own menu wrapper.
+    $output['#sorted'] = TRUE;
+    $output['#tree'] = $build;
+    $output['#attributes'] = $attributes;
+    $output['#theme_wrappers'][] = 'flexnav_menu_tree';
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function flexnav_libraries_info() {
+  $libraries['flexnav'] = array(
+    'name' => 'Flexnav jQuery plugin',
+    'vendor url' => 'http://jasonweaver.name/lab/flexiblenavigation',
+    'download url' => 'https://github.com/indyplanets/flexnav',
+    'version arguments' => array(
+      'file' => 'js/jquery.flexnav.js',
+      'pattern' => '@(?i:FlexNav.js) ([0-9\.a-z]+)@',
+      'lines' => 5,
+    ),
+    'files' => array(
+      'css' => array(
+        'css/flexnav.css',
+      ),
+      'js' => array(
+        'js/jquery.flexnav.js' => array('scope' => 'footer'),
+      ),
+    ),
+    'variants' => array(
+      'minified' => array(
+        'files' => array(
+          'js' => array(
+            'js/jquery.flexnav.min.js',
+          ),
+        ),
+      ),
+      'source' => array(
+        'files' => array(
+          'js' => array(
+            'js/jquery.flexnav.js',
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return $libraries;
+}

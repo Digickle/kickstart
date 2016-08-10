@@ -1,0 +1,147 @@
+@import "common.less";
+
+::-moz-selection{background:#46d7c6;color:#FFF;}
+::selection{background:#46d7c6;color:#FFF;}
+
+body {font-family: "proxima-nova", Helvetica, Arial, sans-serif;font-weight: 400; color:#333}
+
+@base: 1/16rem;
+
+/*
+  Basic layout styling
+*/
+
+#container {
+  padding-top: 1em;
+}
+
+header {
+  margin-bottom: 2em;
+}
+
+aside {
+  float: left;
+  width: 25%;
+
+  .block {
+    margin-bottom: 2em;
+
+    h3 {
+      font-weight: bold;
+      font-size: 1.5em;
+      margin-bottom: 0.5em;
+    }
+  }
+}
+
+aside#sidebar-first {
+  clear: both;
+}
+
+section#node {
+  float: left;
+  width: 50%;
+}
+
+body.no-sidebars #node {
+  width: 100%;
+}
+
+body.one-sidebar #node {
+  width: 74%;
+  float: left;
+}
+
+body.two-sidebars {
+
+  #node {
+    width: 45%;
+  }
+
+  aside#sidebar-first {
+    width: 25%;
+  }
+
+  aside#sidebar-second {
+    float: right;
+    width: 25%;
+  }
+
+}
+
+footer {
+  clear: both;
+}
+
+strong {
+  font-weight: bold;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.flexslider,
+.flexslider .slides > li {
+  max-width: 100%!important;
+}
+
+/*
+  Used for the vanilla theme. Safe to delete and replace with the website's
+  own layout and styles
+*/
+
+
+body {
+  font-family: 'Titillium Web', sans-serif;
+}
+
+div#container {
+  margin: 0 auto;
+  width: 90%;
+}
+
+h1 {
+  font-size: 2em;
+  margin-bottom: 0.5em;
+}
+
+
+#primary-nav {
+  background: #FFF;
+  border-top: 1px solid #666;
+  border-bottom: 1px solid #666;
+  position: relative;
+  z-index: 10;
+  height: 49px;
+}
+
+
+.flexnav {
+  li a {
+    background: #FFF;
+    text-align: center;
+  }
+
+  li ul li {
+    border: 1px solid #efefef;
+  }
+
+}
+
+footer {
+  padding-top: 0.9375em;
+  padding-right: 0.3125em;
+  text-align: right;
+}
+
+#block-system-main {
+  p {
+    margin: 0.75em 0;
+    line-height: 1.25em;
+  }
+}
+
+
+@import "content.less";

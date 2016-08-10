@@ -1,0 +1,17 @@
+name = FlexNav
+description = Integration with the <a href="https://github.com/indyplanets/flexnav">FlexNav</a> jQuery plugin for responsive menus.
+core = 7.x
+
+configure = admin/config/user-interface/flexnav
+
+dependencies[] = jquery_update
+dependencies[] = libraries
+dependencies[] = block
+dependencies[] = menu
+
+; Information added by Drupal.org packaging script on 2015-02-21
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "flexnav"
+datestamp = "1424478182"
+

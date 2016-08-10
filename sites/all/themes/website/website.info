@@ -1,0 +1,21 @@
+name = Website Theme
+description = Standard Website Theme
+version = 1.0
+core = 7.x
+
+regions[header]         = 'Page Header'
+regions[navigation]     = 'Top Navigation'
+regions[sidebar_first]  = 'Left Sidebar'
+regions[help]           = 'Help'
+regions[content_before] = 'Before Content'
+regions[content]        = 'Content'
+regions[content_after]  = 'After Content'
+regions[sidebar_second] = 'Right Sidebar'
+regions[footer]         = 'Footer'
+
+stylesheets[all][] = css/cms.less
+stylesheets[all][] = css/website.less
+stylesheets[all][] = css/mobile.less
+
+scripts[] = js/hoverintent.min.js
+scripts[] = js/website.js
