@@ -18,8 +18,8 @@ function checkFormSupport(type) {
 
       if (checkFormSupport('email') !== false) {
 
-        $('input[name*=phone]').attr('type', 'tel');
-        $('input[name*=email]').attr('type', 'email');
+        $('input.text-box[name*=phone]').attr('type', 'tel');
+        $('input.text-box[name*=email]').attr('type', 'email');
 
         $('input.text-box[name*="email"]').on('blur', function () {
           $(this).attr('value', $(this).attr('value').toLowerCase());
@@ -56,7 +56,7 @@ function checkFormSupport(type) {
       e.preventDefault();
       if (confirm('Are you sure you want to flush ALL caches?\n\nThis is an expensive operation and can\naffect the site performance for some time.')) {
         window.location = $(this).attr('href');
-      };
+      }
     });
 
   }, 1700);
